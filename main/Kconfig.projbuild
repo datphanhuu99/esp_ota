@@ -1,0 +1,20 @@
+menu "project config"
+    config WIFI_SSID
+        string "Wifi ssid"
+        default "Anh"
+        help
+            SSID of your wifi network.
+
+    config WIFI_PASSWORD
+        string  "Wifi password"
+        default "0345171567"
+        help 
+            password of your wifi network.
+
+    config OTA_UPDATE_URL
+        string "firmware update url"
+        default "http://192.168.1.100:8000/my_ota_from_scratch.bin"
+        help
+            URL where the ESP32 will download the new firmware binary.
+
+endmenu

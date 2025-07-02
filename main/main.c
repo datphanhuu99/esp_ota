@@ -7,8 +7,9 @@
 
 #include "gpio.h"
 #include "touch.h"
-#include "led.h"
 #include "wifi.h"
+#include "led.h"
+#include <ota_test.h>
 
 #include "nvs_flash.h"
 
@@ -191,6 +192,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(app_read_touch, "app_read_touch", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(app_stats_task, "app_stats_task", 4096, NULL, STATS_TASK_PRIO, NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(app_wifi, "app_wifi", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(ota_update, "ota_update", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
     xSemaphoreGive(sync_stats_task);
     // uint16_t val = 0;
     // while(1){

@@ -1,7 +1,14 @@
 #include "ota_test.h"
 
-extern const uint8_t server_cert_pem_start[] asm("_binary_server_cert_pem_start");
-extern const uint8_t server_cert_pem_end[]   asm("_binary_server_cert_pem_end");
+#define HASH_LEN 32 // SHA-256 hash length in bytes
+#define EXAMPLE_NETIF_DESC_STA "example_netif_sta"
+
+static const char *TAG = "OTA";
+
+// static const char *bind_interface_name = EXAMPLE_NETIF_DESC_STA;
+
+extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
+extern const uint8_t server_cert_pem_end[]   asm("_binary_ca_cert_pem_end");
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt){
     switch (evt->event_id) {
@@ -33,19 +40,33 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt){
     return ESP_OK;
 }
 
-void ota_update(void *arg)
+void ota_update()
 {
+    get_sha256_of_partitions();
+
+    // esp_netif_t *netif = get_example_netif_from_desc(bind_interface_name);
+    // if (netif == NULL) {
+    //     ESP_LOGE(TAG, "Can't find netif from interface description");
+    //     abort();
+    // }
+    // struct ifreq ifr = {0};
+    // esp_netif_get_netif_impl_name(netif, ifr.ifr_name);
+    // ESP_LOGI(TAG, "Bind interface name is %s", ifr.ifr_name);
+
     ESP_LOGI(TAG, "Starting OTA update from %s", OTA_URL);
-    const esp_http_client_config_t config = {
+    esp_http_client_config_t config = {
         .url = OTA_URL,
-        .crt_bundle_attach= esp_crt_bundle_attach, // Attach the certificate bundle for HTTPS
-        // .cert_pem = NULL, // Add your certificate here if needed
+        // .crt_bundle_attach= esp_crt_bundle_attach, // Attach the certificate bundle for HTTPS
+        .cert_pem =  (char *)server_cert_pem_start, // Add your certificate here if needed
         .event_handler = _http_event_handler,
         .keep_alive_enable = true,
+        // .if_name = &ifr,
         // .tls_dyn_buf_strategy = HTTP_TLS_DYN_BUF_RX_STATIC,
-        .timeout_ms = 10000,
-        .skip_cert_common_name_check = true, // Skip common name check for simplicity
+        // .timeout_ms = 10000,
+        // .skip_cert_common_name_check = true, // Skip common name check for simplicity
     };
+
+
 
     ESP_LOGI(TAG, "Attempting to download update from %s", config.url);
 
@@ -70,8 +91,35 @@ void ota_update(void *arg)
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
-    
+    ESP_LOGI(TAG, "OTA task completed");
     // Tự hủy task khi xong việc (kể cả khi lỗi)
     vTaskDelete(NULL);
 
+}
+
+static void print_sha256(const uint8_t *image_hash, const char *label)
+{
+    char hash_print[HASH_LEN * 2 + 1];
+    hash_print[HASH_LEN * 2] = 0;
+    for (int i = 0; i < HASH_LEN; ++i) {
+        sprintf(&hash_print[i * 2], "%02x", image_hash[i]);
+    }
+    ESP_LOGI(TAG, "%s %s", label, hash_print);
+}
+
+static void get_sha256_of_partitions(void)
+{
+    uint8_t sha_256[HASH_LEN] = { 0 };
+    esp_partition_t partition;
+
+    // get sha256 digest for bootloader
+    partition.address   = ESP_BOOTLOADER_OFFSET;
+    partition.size      = ESP_PARTITION_TABLE_OFFSET;
+    partition.type      = ESP_PARTITION_TYPE_APP;
+    esp_partition_get_sha256(&partition, sha_256);
+    print_sha256(sha_256, "SHA-256 for bootloader: ");
+
+    // get sha256 digest for running partition
+    esp_partition_get_sha256(esp_ota_get_running_partition(), sha_256);
+    print_sha256(sha_256, "SHA-256 for current firmware: ");
 }

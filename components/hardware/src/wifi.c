@@ -84,7 +84,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 //     return wifi_config;
 // }
 
-void wifi_init(void)
+uint8_t wifi_init(void)
 {   
     e_wifi_event_group = xEventGroupCreate();
 
@@ -135,12 +135,15 @@ void wifi_init(void)
     EventBits_t bits = xEventGroupWaitBits(e_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
     if(bits & WIFI_CONNECTED_BIT){
         ESP_LOGI(TAG, "Connected to AP");
+        return 1;
     } else if(bits & WIFI_FAIL_BIT){
         ESP_LOGI(TAG, "Failed to connect to AP");
+        return 0;
     } else {
         ESP_LOGI(TAG, "Unexpected event");
+        return 0;
     }
-
+    return 0;
 }
 
 // void wifi_deinit(void)

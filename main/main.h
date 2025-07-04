@@ -17,7 +17,7 @@ static void app_init(void);
 
 static esp_err_t print_real_time_stats(TickType_t xTicksToWait);
 static void app_stats_task(void *arg);
-
+static void app_ota_update(void *arg);
 
 void app_main(void);
 

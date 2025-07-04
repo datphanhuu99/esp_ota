@@ -11,7 +11,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-void wifi_init(void);
+uint8_t wifi_init(void);
 void wifi_deinit(void);
 void wifi_connect(void);
 void wifi_disconnect(void);
@@ -19,4 +19,4 @@ void wifi_scan(void);
 void wifi_set_mode(void);
 wifi_config_t wifi_set_config(void);
 
-static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+// static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);

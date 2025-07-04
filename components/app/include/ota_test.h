@@ -14,9 +14,10 @@
 #include "esp_crt_bundle.h"
 
 
-static const char *TAG = "OTA";
 // #define WIFI_SSID      CONFIG_WIFI_SSID
 // #define WIFI_PASSWORD  CONFIG_WIFI_PASSWORD
 #define OTA_URL        CONFIG_OTA_UPDATE_URL
 
-void ota_update(void *arg);
+void ota_update();
+static void print_sha256(const uint8_t *image_hash, const char *label);
+static void get_sha256_of_partitions(void);

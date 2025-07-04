@@ -21,7 +21,7 @@
 #define STATS_TICK pdMS_TO_TICKS(1000)
 #define ARRAY_SIZE_OFFSET 10
 
-
+static bool wifi_is_ready = false;
 
 static void app_init(void)
 {
@@ -62,7 +62,10 @@ static void app_wifi(void *arg)
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    wifi_init();
+    if(wifi_init()>0){
+        wifi_is_ready = true;
+        printf("wifi_init success\n");
+    }
     // wifi_set_mode();
     // wifi_connect();
     // wifi_scan();
@@ -71,6 +74,22 @@ static void app_wifi(void *arg)
         printf("app_wifi task running\n");
         vTaskDelay(pdMS_TO_TICKS(1000));
         xSemaphoreGive(sync_wifi_task);
+    }
+}
+
+static void app_ota_update(void *arg)
+{
+    xSemaphoreTake(sync_wifi_task, portMAX_DELAY);
+    printf("app_ota_update\n");
+    while (1)
+    {
+        printf("app_ota_update wait wifi ready\n");
+        if(wifi_is_ready){
+            ota_update();
+            break;
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
     }
 }
 
@@ -192,7 +211,7 @@ void app_main(void){
     xTaskCreatePinnedToCore(app_read_touch, "app_read_touch", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(app_stats_task, "app_stats_task", 4096, NULL, STATS_TASK_PRIO, NULL,tskNO_AFFINITY);
     xTaskCreatePinnedToCore(app_wifi, "app_wifi", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
-    xTaskCreatePinnedToCore(ota_update, "ota_update", 4096, NULL, TOUCH_TASK_PRIO, NULL,tskNO_AFFINITY);
+    xTaskCreatePinnedToCore(app_ota_update, "app_ota_update", 8192, NULL, 1, NULL,tskNO_AFFINITY);
     xSemaphoreGive(sync_stats_task);
     // uint16_t val = 0;
     // while(1){
